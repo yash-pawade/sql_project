@@ -85,4 +85,3 @@ Through deep relational querying, this analytics pipeline extracts critical metr
 
 ---
 
-⭐ *Built as part of a Retail Business Intelligence Portfolio.*
