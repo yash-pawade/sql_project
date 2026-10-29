@@ -160,4 +160,71 @@ GROUP BY p.Category
 ORDER BY Total_Profit_Made DESC;
 
 
+-- Top Customers Attrition Rate 
+WITH CustomerLifetimeValue AS (
+    SELECT 
+        Customer_ID,
+        SUM(Revenue) AS Total_Spent,
+        MAX(Order_Date) AS Last_Order_Date
+    FROM sales
+    GROUP BY Customer_ID
+),
+TopCustomers AS (
+    SELECT 
+        Customer_ID,
+        Total_Spent,
+        Last_Order_Date,
+        DATEDIFF('2026-03-01', Last_Order_Date) AS Days_Since_Last_Order
+    FROM CustomerLifetimeValue
+    WHERE Total_Spent >= (SELECT AVG(Total_Spent) FROM CustomerLifetimeValue) -- Spending threshold
+),
+CustomerStatus AS (
+    SELECT 
+        Customer_ID,
+        Total_Spent,
+        Last_Order_Date,
+        Days_Since_Last_Order,
+        CASE 
+            WHEN Days_Since_Last_Order > 90 THEN 'Churned'
+            ELSE 'Active'
+        END AS Status
+    FROM TopCustomers
+)
+SELECT 
+    COUNT(Customer_ID) AS Total_Top_Customers,
+    COUNT(CASE WHEN Status = 'Churned' THEN 1 END) AS Churned_Top_Customers,
+    COUNT(CASE WHEN Status = 'Active' THEN 1 END) AS Active_Top_Customers,
+    ROUND(
+        (COUNT(CASE WHEN Status = 'Churned' THEN 1 END) * 100.0) / COUNT(Customer_ID), 
+        2
+    ) AS Top_Customer_Attrition_Rate_Percent
+FROM CustomerStatus;
+
+
+-- Month over Month sales Growth 
+WITH MonthlySales AS (
+    SELECT 
+        DATE_FORMAT(Order_Date, '%Y-%m') AS Sales_Month,
+        SUM(Revenue) AS Current_Month_Revenue
+    FROM sales
+    GROUP BY Sales_Month
+),
+SalesWithLag AS (
+    SELECT 
+        Sales_Month,
+        Current_Month_Revenue,
+        LAG(Current_Month_Revenue) OVER (ORDER BY Sales_Month ASC) AS Previous_Month_Revenue
+    FROM MonthlySales
+)
+SELECT 
+    Sales_Month,
+    Current_Month_Revenue,
+    COALESCE(Previous_Month_Revenue, 0) AS Previous_Month_Revenue,
+    ROUND(Current_Month_Revenue - COALESCE(Previous_Month_Revenue, 0), 2) AS Absolute_Growth,
+    ROUND(
+        ((Current_Month_Revenue - Previous_Month_Revenue) / NULLIF(Previous_Month_Revenue, 0)) * 100, 
+        2
+    ) AS MoM_Growth_Percentage
+FROM SalesWithLag;
+
 
