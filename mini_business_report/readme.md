@@ -81,14 +81,6 @@ Through deep relational querying, this analytics pipeline extracts critical metr
 
 ---
 
-## 🚀 How to Run
-
-1. Clone or copy the SQL schema script.
-2. Open your MySQL client (e.g., **MySQL Workbench**, **DBeaver**, or **Terminal**).
-3. Execute the schema initialization script:
-   ```sql
-   USE sales_dataset;
-   ```
 4. Run any of the analytical queries provided in the analytical framework report to extract business metrics.
 
 ---
